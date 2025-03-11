@@ -1,0 +1,11 @@
+TARGET = test_sound
+
+SRCS = main.c pitch_player.c lfo_player.c
+
+LIBS = -lm -lpthread
+
+all: $(TARGET)
+
+$(TARGET): $(SRCS)
+	cc  -o $(TARGET) $(LIBS) $(SRCS)
+
