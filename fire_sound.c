@@ -23,19 +23,20 @@
 #define CV_DECAY_TIME		(R48 * C28)	// 0.1 second 
 
 static timer_555_astable_t timer = {0};
-static lfsr_t lfsr = {0};
+/*static lfsr_t lfsr = {0};*/
 
-void fire_init(fire_t* p, int sampleRate) {
+void fire_init(fire_t* p, int sampleRate, lfsr_t* lfsr) {
     
     timer_555_init(&timer, sampleRate, R44, R45, C27);
     timer.enabled = 1;
     timer.amplitude = 0.2;
 
-    lfsr_init(&lfsr);
+    /*lfsr_init(&lfsr);*/
     
     p->sampleRate = sampleRate;
     p->advance = (1.0 / sampleRate);
     p->time = 5;
+    p->lfsr = lfsr;
 }
 
 
@@ -68,19 +69,21 @@ float fire_wavefunc(fire_t *p) {
     p->time += p->advance; 
 
     // ================= NOISE_CLOCK @4kHz ==============
-    static uint64_t noiseClockDivider = 0;
-    noiseClockDivider++;	
-    if (noiseClockDivider % 12 == 0) {   // Sample noice every 12th sample. @4kHz
+    /*static uint64_t noiseClockDivider = 0;*/
+    /*noiseClockDivider++;	*/
+    /*if (noiseClockDivider % 12 == 0) {   // Sample noice every 12th sample. @4kHz*/
 
-	uint8_t noise  = lfsr_update(&lfsr);
-	double cv = noise + p->c28_voltage;
+	/*uint8_t noise  = lfsr_update(p->lfsr);*/
+	/*double cv = noise + p->c28_voltage;*/
 	
-	// Exaample without any decay
+	// Example without any decay
 	/*cv = get_noise(&noise) * 1.0 + 2.664;*/
 	/*cv = get_noise(&noise) * 3.0 + 0.664;*/
 
-	timer_555_update(&timer, cv); // 1 -> High freq,  4 -> mid freq, 4.999 ->low
-    }
+	/*timer_555_update(&timer, cv); // 1 -> High freq,  4 -> mid freq, 4.999 ->low*/
+	/*   }*/
 
+    double cv  = lfsr_update(p->lfsr) + p->c28_voltage;
+    timer_555_update(&timer, cv); // 1 -> High freq,  4 -> mid freq, 4.999 ->low
     return timer_555_wavefunc(&timer) * p->envelope;
 }

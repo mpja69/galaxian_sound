@@ -44,11 +44,11 @@ typedef struct
     int sirenCounter;
     int wheeePitch;
 
-    // TODO: Fire sound
     int playPlayerShootSound;	// $41CC
     int playerShootSoundCounter;// $41CE
 
-    // TODO: Hit sound
+    int isPlayerDying;
+    int playerExplosionCounter;
 } game_t;
 
 // ============================ Data ====================================
@@ -244,7 +244,6 @@ void handle_attack_sound(game_t* g) {
     // $1815
 }
 
-// TODO:
 void handle_player_shooting_sound(game_t* g) {
     if (g->IS_GAME_OVER) { return; }
 
@@ -256,15 +255,33 @@ void handle_player_shooting_sound(game_t* g) {
 
     // Are we done playing?
     if (g->playerShootSoundCounter == 0) { 
-	sound_fire_enable(0);
+	sound_fire(0);
 	return; 
     }
     g->playerShootSoundCounter -= 1;
 
-    sound_fire_enable(1);
+    sound_fire(1);
 }
 
-// TODO: Explosion sound
+void handle_player_dying(game_t* g) {
+    if (g->IS_GAME_OVER) { return; }
+
+    if (g->isPlayerDying == 1) {
+	g->isPlayerDying = 0;
+	g->playerExplosionCounter = 0x10;
+	return;
+    }
+
+    // Are we done playing?
+    if (g->playerExplosionCounter == 0) { 
+	sound_hit(0);
+	return; 
+    }
+    g->playerExplosionCounter -= 1;
+
+    sound_hit(1);
+}
+
 
 void handle_sound(game_t* g) {
     g->vol1 = 0;
@@ -279,6 +296,7 @@ void handle_sound(game_t* g) {
     handle_extralife_sound(g);
     handle_coin_insert_sound(g);
     handle_player_shooting_sound(g);
+    handle_player_dying(g);
 
     sound_vol_set(g->vol1, g->vol2);
     sound_pitch_set(g->pitch);
@@ -313,7 +331,8 @@ int main(int argc, char** argv) {
     //g.playGameStartMelody = 1;
     //g.playAlienDeathSound = 1;	    // + IS_GAME_IN_PLAY = 1
     //g.playFlagshipDeathSound = 1;	    // + IS_GAME_IN_PLAY = 1
-    g.playPlayerShootSound = 1;		    // + IS_GAME_OVER = 0
+    //g.playPlayerShootSound = 1;		    // + IS_GAME_OVER = 0
+    g.isPlayerDying = 1;		    // + IS_GAME_OVER = 0
 
     // "Game loop" - 60 fps
     struct timeval t0, t1;

@@ -28,6 +28,7 @@ typedef struct {
 void pitch_init(pitch_t* pp, int sampleRate);
 float pitch_wavefunc(pitch_t* pp);
 void pitch_set_pitch(pitch_t* pp, uint8_t pitch);
+void pitch_set_vol(pitch_t* pp, uint8_t vol1, uint8_t vol2);
 
 
 

@@ -7,6 +7,7 @@
 #include "timer_555.h"
 #include "pitch.h"
 #include "fire_sound.h"
+#include "hit_sound.h"
 //#include "lfsr.h"
 
 #define DEVICE_FORMAT ma_format_f32
@@ -22,11 +23,14 @@ timer_555_astable_t t3 = {};
 // Pitch sounds
 pitch_t p = {};
 
-// Fire sound
-fire_t fire = {};
-timer_555_astable_t t4 = {};
+// Noise sounds: Fire & Hit
 lfsr_t lfsr = {};
+fire_t fire = {};
+hit_t hit = {};
+ma_bpf2 filter = {};
 
+
+// miniaudio playback device
 ma_device device = {};
 
 
@@ -38,7 +42,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
     ma_uint64 iFrame;
     ma_uint64 iChannel;
     float* pFramesOutF32 = (float*)pOutput;
-
+/*
     for (iFrame = 0; iFrame < frameCount; iFrame += 1) {
         float signal = 0;
         signal =  pitch_wavefunc(&p);
@@ -48,12 +52,21 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
         // Fire
         signal += fire_wavefunc(&fire);
 
+
         for (iChannel = 0; iChannel < pDevice->playback.channels; iChannel += 1) {
             pFramesOutF32[iFrame * pDevice->playback.channels + iChannel] = signal;
         }
     }
+*/  
+    for (iFrame = 0; iFrame < frameCount; iFrame += 1) {
+        float signal = 0;
+        signal = hit_wavefunc(&hit);
+        for (iChannel = 0; iChannel < pDevice->playback.channels; iChannel += 1) {
+            pFramesOutF32[iFrame * pDevice->playback.channels + iChannel] = signal;
+        }
+    }
+    /*ma_bpf2_process_pcm_frames(&filter, pOutput, pOutput, frameCount);*/
 }
-
 
 
 
@@ -74,7 +87,17 @@ int sound_init()
 
     // Fire & Player Hit sounds
     lfsr_init(&lfsr);
-    fire_init(&fire, DEVICE_SAMPLE_RATE);
+    fire_init(&fire, DEVICE_SAMPLE_RATE, &lfsr);
+    hit_init(&hit, DEVICE_SAMPLE_RATE, &lfsr);
+
+    // Init the bandpass filter
+    ma_bpf2_config filterConfig = ma_bpf2_config_init(ma_format_f32, DEVICE_CHANNELS, DEVICE_SAMPLE_RATE, 100, 1);
+    ma_result result = ma_bpf2_init(&filterConfig, NULL, &filter);
+    if (result != MA_SUCCESS) {
+        printf("Failed to create filter.\n");
+        ma_bpf2_uninit(&filter, NULL);
+        return -6;
+    }
 
     // PLAYBACK DEVICE
     // (The miniaudio-way: Always initialize ma-objects by providing a "params-struct")
@@ -101,11 +124,13 @@ int sound_init()
         return -5;
     }
 
+
     return 0;
 }
 
 void sound_close() 
 {
+    ma_bpf2_uninit(&filter, NULL);
     ma_device_uninit(&device);
 }
 
@@ -126,6 +151,7 @@ void sound_update()
 
     // Fire
     fire_update(&fire);
+    hit_update(&hit);
     
 
 }
@@ -135,15 +161,16 @@ void sound_pitch_set(uint8_t pitch)    // 0..255	7800:		Controls pitch (41C1),		
     pitch_set_pitch(&p, pitch);
 }
 
+void sound_vol_set(uint8_t vol1, uint8_t vol2) // 0/1	6806, 6807:	Selects "instrument" (41C0)	HANDLE_SOUND:
+{
+    pitch_set_vol(&p, vol1, vol2);
+    /*p.vol1 = vol1;*/
+    /*p.vol2 = vol2;*/
+}
+
 void sound_background_freq_set(int8_t freqBits) 
 {
     lfo.nextFreqBits =  freqBits; 
-}
-
-void sound_vol_set(uint8_t vol1, uint8_t vol2) // 0/1	6806, 6807:	Selects "instrument" (41C0)	HANDLE_SOUND:
-{
-    p.vol1 = vol1;
-    p.vol2 = vol2;
 }
 
 void sound_background_enable(uint8_t fs1, uint8_t fs2, uint8_t fs3) // 0/1 for the oscillators	HANDLE_ALIEN_AGGRESSIVENESS:
@@ -153,8 +180,13 @@ void sound_background_enable(uint8_t fs1, uint8_t fs2, uint8_t fs3) // 0/1 for t
     t3.enabled = fs3;
 }
 
-void sound_fire_enable(uint8_t enable) // 0/1		6805:		Controls the shoot-sound	HANDLE_PLAYER_SHOOTING_SOUND:
+void sound_fire(uint8_t enable) // 0/1		6805:		Controls the shoot-sound	HANDLE_PLAYER_SHOOTING_SOUND:
 {
     fire_set_enable(&fire, enable);
+}
+
+void sound_hit(uint8_t enable) {   // 0/1		6803:		Controls the "noise" explosion	HANDLE_PLAYER_HIT:
+    hit_set_enable(&hit, enable);
+
 }
 // vim: ts=4

@@ -34,6 +34,11 @@ void pitch_set_pitch(pitch_t* pp, uint8_t pitch)
     pp->advance = 1.0 / (pp->sampleRate / frequency);
 }
 
+void pitch_set_vol(pitch_t* pp, uint8_t vol1, uint8_t vol2) {
+	pp->vol1 = vol1;
+	pp->vol2 = vol2;
+}
+
 // ======================== To generate the waveform ======================
 
 #define R34	RES_K(5.1) 
