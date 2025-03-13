@@ -38,27 +38,29 @@
 
 
 
-void lfsr_init(lfsr_t* lfsr) 
+void lfsr_init(lfsr_t* p) 
 {
     // Fill the shift register before using it.
     for (int i=0; i<17; i++) {
-	lfsr->shiftreg = (lfsr->shiftreg >> 1) | ((((lfsr->shiftreg >> 12) ^ ~lfsr->shiftreg) & 1) << 16);
+	    p->shiftreg = (p->shiftreg >> 1) | ((((p->shiftreg >> 12) ^ ~p->shiftreg) & 1) << 16);
     }
+	p->noise = p->shiftreg & 1;
 }
 
 
 /*uint8_t lfsr_update(lfsr_t* lfsr) {*/
-uint8_t lfsr_update(lfsr_t* lfsr) {
-    lfsr->shiftreg = (lfsr->shiftreg >> 1) | ((((lfsr->shiftreg >> 12) ^ ~lfsr->shiftreg) & 1) << 16);
+void lfsr_update(lfsr_t* p) {
+    p->shiftreg = (p->shiftreg >> 1) | ((((p->shiftreg >> 12) ^ ~p->shiftreg) & 1) << 16);
 
-    static uint8_t noise  = 0;
     static uint64_t noiseClockDivider = 0;
     noiseClockDivider++;	
     if (noiseClockDivider % 12 == 0) {   // Sample noice every 12th sample. @4kHz
-
-	noise = lfsr->shiftreg & 1;
+	    p->noise = p->shiftreg & 1;
     }
-    return noise;
+}
+
+uint8_t lfsr_get_noise(lfsr_t* p) {
+    return p->noise;
 }
 
 // vim: ts=4

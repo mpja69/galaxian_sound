@@ -20,15 +20,15 @@ typedef struct {
 	int vol2;
 	int pitch;
 	double amplitude;
-    double time;
-    double advance;
-    int sampleRate;
+	double time;
+	double advance;
+	int sampleRate;
 } pitch_t;
 
-void pitch_init(pitch_t* pp, int sampleRate);
-float pitch_wavefunc(pitch_t* pp);
-void pitch_set_pitch(pitch_t* pp, uint8_t pitch);
-void pitch_set_vol(pitch_t* pp, uint8_t vol1, uint8_t vol2);
+void pitch_init(pitch_t* p, int sampleRate);
+float pitch_wavefunc(pitch_t* p);
+void pitch_set_pitch(pitch_t* p, uint8_t pitch);
+void pitch_set_vol(pitch_t* p, uint8_t vol1, uint8_t vol2);
 
 
 
@@ -76,3 +76,5 @@ void pitch_set_vol(pitch_t* pp, uint8_t vol1, uint8_t vol2);
 /*int getFrequency(int pitch);*/
 /*int getToneLength(int note);*/
 
+
+//vim: ts=4

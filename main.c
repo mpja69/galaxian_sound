@@ -325,12 +325,12 @@ int main(int argc, char** argv) {
     printf("Sound started: %d\n", err);
 
     //sound_background_enable(1, 1, 1);
-    g.enableAlienAttackSound = 1;	    // + HAVE_NO_INFLIGHT_ALIENS = 0
+    //g.enableAlienAttackSound = 1;	    // + HAVE_NO_INFLIGHT_ALIENS = 0
     //g.playPlayerCreditSound = 1;
     //g.playExtraLifeSound = 1;
     //g.playGameStartMelody = 1;
     //g.playAlienDeathSound = 1;	    // + IS_GAME_IN_PLAY = 1
-    //g.playFlagshipDeathSound = 1;	    // + IS_GAME_IN_PLAY = 1
+    //playFlagshipDeathSound = 1;	    // + IS_GAME_IN_PLAY = 1
     //g.playPlayerShootSound = 1;		    // + IS_GAME_OVER = 0
     g.isPlayerDying = 1;		    // + IS_GAME_OVER = 0
 

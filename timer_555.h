@@ -9,7 +9,7 @@ typedef struct {
     int enabled;		// HANDLE_ALIEN_AGGRESSIVENESS, enables/dissables the 3 different 555-timers
     //
     // These are related to the waveform
-    double time_high;
+    /*double time_high;*/
     double time_low;
     double duty_cycle;
     double amplitude;
@@ -19,11 +19,13 @@ typedef struct {
 } timer_555_astable_t;
 
 
-void timer_555_init(timer_555_astable_t* pt, int sampleRate, double r1, double r2, double c);
+void timer_555_init(timer_555_astable_t* p, int sampleRate, double r1, double r2, double c);
 
 // Should be called as ofter as possible?
-void timer_555_update(timer_555_astable_t* pt, double cv);
+void timer_555_update(timer_555_astable_t* p, double cv);
 
 
 // Called from the "callback"
-float timer_555_wavefunc(timer_555_astable_t* pt);
+float timer_555_wavefunc(timer_555_astable_t* p);
+
+//vim: ts=4

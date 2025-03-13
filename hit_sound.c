@@ -41,7 +41,7 @@ void hit_update(hit_t* p) {
 	p->envelope =  exp(-p->time/0.3784);	    // !enable, T = (R35+R36) * C21 = 172k * 2.2u
     }
 
-    printf("Env: %f\n", p->envelope);
+    //printf("Env: %f\n", p->envelope);
 }
 
 
@@ -51,8 +51,7 @@ float hit_wavefunc(hit_t *p) {
     }
     p->time += p->advance; 
 
-    // The acutal noise,  (together with envelope)
-    float data =  lfsr_update(p->lfsr) * p->envelope * p->amplitude;
+    float data = lfsr_get_noise(p->lfsr) * p->envelope * p->amplitude;
 
     // Using a floating window buffer, a low pass filter, by smoothiing it out by calculating the average.
     rb_write(&(p->rb), data);

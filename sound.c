@@ -27,7 +27,15 @@ pitch_t p = {};
 lfsr_t lfsr = {};
 fire_t fire = {};
 hit_t hit = {};
+
+
+// TODO: Try out filter...instead my own averaging-sliding-window
 ma_bpf2 filter = {};
+// TODO: Look into (Nodes and Mixer)...to connect "audio streams"...
+//          - instead of my single callback with summation
+//          - and instead of how I connect stuff, e.g. lfo -> timer
+// TODO: And look into some update-callback...instead of my game-loop
+
 
 
 // miniaudio playback device
@@ -42,30 +50,36 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
     ma_uint64 iFrame;
     ma_uint64 iChannel;
     float* pFramesOutF32 = (float*)pOutput;
-/*
+    (void) pInput; // Not used
+
+    // FrameCount is number of samples to fill the buffer.
+    // With frameCount: 480.
+    // sampleRate: 48000
+    // NOTE: --> This callback  @100 Hz, (and the update @60 Hz)
     for (iFrame = 0; iFrame < frameCount; iFrame += 1) {
+        // NOTE: And inside this loop @48000 Hz.
+
+
+        // FIX: Update the lfsr: at RNG_CLOCK = @12MHz, But sample at HSYNC/4 = NOISE_CLOCK = @4000 Hz
+        //      (Here at SAMPLE_RATE / 12 = 48000 / 12 = 4000)
+        lfsr_update(&lfsr);
+
         float signal = 0;
+        // Complex
         signal =  pitch_wavefunc(&p);
+        // Background
         signal += timer_555_wavefunc(&t1);
         signal += timer_555_wavefunc(&t2);
         signal += timer_555_wavefunc(&t3);
-        // Fire
+        // Noise
         signal += fire_wavefunc(&fire);
+        signal += hit_wavefunc(&hit);
 
-
+        // Channels is: Right and Left. Interleave them.
         for (iChannel = 0; iChannel < pDevice->playback.channels; iChannel += 1) {
             pFramesOutF32[iFrame * pDevice->playback.channels + iChannel] = signal;
         }
     }
-*/  
-    for (iFrame = 0; iFrame < frameCount; iFrame += 1) {
-        float signal = 0;
-        signal = hit_wavefunc(&hit);
-        for (iChannel = 0; iChannel < pDevice->playback.channels; iChannel += 1) {
-            pFramesOutF32[iFrame * pDevice->playback.channels + iChannel] = signal;
-        }
-    }
-    /*ma_bpf2_process_pcm_frames(&filter, pOutput, pOutput, frameCount);*/
 }
 
 
@@ -152,8 +166,6 @@ void sound_update()
     // Fire
     fire_update(&fire);
     hit_update(&hit);
-    
-
 }
 
 void sound_pitch_set(uint8_t pitch)    // 0..255	7800:		Controls pitch (41C1),		HANDLE_SOUND:

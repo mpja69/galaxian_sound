@@ -8,41 +8,48 @@
 #define C20	  CAP_U(0.1)
 #define R34	  RES_K(5.1) // (R34 exists on 2 places in the schematics: 15C and 14A
 
-void timer_555_init(timer_555_astable_t* pt, int sampleRate, double r1, double r2, double c) {
-    pt->tau1 =   (r1+r2) * c;
-    pt->tau2 =   r2 * c;
-    pt->time_low = pt->tau2 * log(2);
-    pt->sampleRate = sampleRate;
-    pt->amplitude = 0.01;
+void timer_555_init(timer_555_astable_t* p, int sampleRate, double r1, double r2, double c) {
+    p->tau1 =   (r1+r2) * c;
+    p->tau2 =   r2 * c;
+    p->time_low = p->tau2 * log(2);
+    p->sampleRate = sampleRate;
+    p->amplitude = 0.01;
 }
 
-static void timer_555_calculate_waveform(timer_555_astable_t* pt) {
-    pt->time_high = pt->tau1 * log(1 + (pt->cv / (2*(V_CC-pt->cv))));
-    pt->duty_cycle = pt->time_high / (pt->time_high + pt->time_low);
-    pt->advance = 1.0 / (pt->sampleRate * (pt->time_low + pt->time_high));
+static void timer_555_calculate_waveform(timer_555_astable_t* p) {
+    if (p->cv >= 5) {
+        p->duty_cycle = 0;
+        p->advance  = 0;
+        return;
+    }
+    double time_high = p->tau1 * log(1 + (p->cv / (2*(V_CC-p->cv))));
+    p->duty_cycle = time_high / (time_high + p->time_low);
+    p->advance = 1.0 / (p->sampleRate * (p->time_low + time_high));
 }
 
 
-void timer_555_update(timer_555_astable_t* pt, double cv) {
-    if (!pt->enabled) { return; }  
-    if (pt->cv == cv) { return; }
+void timer_555_update(timer_555_astable_t* p, double cv) {
+    if (!p->enabled) { return; }  
+    if (p->cv == cv) { return; }
 
-    pt->cv = cv;
-    timer_555_calculate_waveform(pt);
+    p->cv = cv;
+    timer_555_calculate_waveform(p);
 }
 
-float timer_555_wavefunc(timer_555_astable_t* pt)
+float timer_555_wavefunc(timer_555_astable_t* p)
 {
-    double f = pt->time - (ma_int64)pt->time;
+    if (p->advance == 0) { return 0; }
+
+    double f = p->time - (ma_int64)p->time;
     double r;
 
-    if (f < pt->duty_cycle) {
-        r =  pt->amplitude;
+    if (f < p->duty_cycle) {
+        r =  p->amplitude;
     } else {
-        r = -pt->amplitude;
+        r = -p->amplitude;
     }
 
-    pt->time += pt->advance;
+    p->time += p->advance;
 
     return (float)r;
 }

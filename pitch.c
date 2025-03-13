@@ -2,11 +2,11 @@
 #include <stdint.h>
 #include <stdio.h>
 
-void pitch_init(pitch_t* pp, int sampleRate)
+void pitch_init(pitch_t* p, int sampleRate)
 {
-    pp->pitch = 0xFF;
-    pp->sampleRate = sampleRate;
-    pp->amplitude = 0.1;
+    p->pitch = 0xFF;
+    p->sampleRate = sampleRate;
+    p->amplitude = 0.1;
 }
 
 static double getFrequency(int pitch) {
@@ -21,22 +21,22 @@ static double getFrequency(int pitch) {
     return 1536000.0 / 16.0 / (256 - pitch);
 }
 
-void pitch_set_pitch(pitch_t* pp, uint8_t pitch)
+void pitch_set_pitch(pitch_t* p, uint8_t pitch)
 {
-    if (pitch == pp->pitch) { return; }
-    pp->pitch = pitch;
+    if (pitch == p->pitch) { return; }
+    p->pitch = pitch;
 
-    if (pp->pitch >= 0xFF) { 
-	pp->advance = 0;
+    if (p->pitch >= 0xFF) { 
+	p->advance = 0;
 	return;
     }
     double frequency = getFrequency(pitch);
-    pp->advance = 1.0 / (pp->sampleRate / frequency);
+    p->advance = 1.0 / (p->sampleRate / frequency);
 }
 
-void pitch_set_vol(pitch_t* pp, uint8_t vol1, uint8_t vol2) {
-	pp->vol1 = vol1;
-	pp->vol2 = vol2;
+void pitch_set_vol(pitch_t* p, uint8_t vol1, uint8_t vol2) {
+	p->vol1 = vol1;
+	p->vol2 = vol2;
 }
 
 // ======================== To generate the waveform ======================
@@ -69,26 +69,29 @@ void pitch_set_vol(pitch_t* pp, uint8_t vol1, uint8_t vol2) {
 // "Vol2" controlls QD: 0 -> 0Ohm,		1 -> 15kOhm
 //
 // TODO: Räkna om värdena för a, b och c
-static float pitch_get_sample(pitch_t* pp, uint8_t i) {
+static float pitch_get_sample(pitch_t* p, uint8_t i) {
 	int qa = i & 1;
 	int qb;	// not used
 	int qc = i>>2 & 1;
 	int qd = i>>3 & 1;
 	
 	double a = qa * V_A;
-	double c = qc * (pp->vol1 * (V_C1-V_C0) + V_C0);
-	double d = qd * pp->vol2 * V_D;
+	double c = qc * (p->vol1 * (V_C1-V_C0) + V_C0);
+	double d = qd * p->vol2 * V_D;
 
 	double out = (a+c+d);// * 6.0 - 1.0;
-	return out * pp->amplitude;
+	return out * p->amplitude;
 }
 
-float pitch_wavefunc(pitch_t* pp)
+float pitch_wavefunc(pitch_t* p)
 {
+    if (p->advance == 0) { return 0; }
+    
+
     float val = 0;
-    int i = (pp->time - (int)pp->time) * 16;
-    val = pitch_get_sample(pp, i);
-    pp->time += pp->advance;
+    int i = (p->time - (int)p->time) * 16;
+    val = pitch_get_sample(p, i);
+    p->time += p->advance;
     return val;
 }
 
